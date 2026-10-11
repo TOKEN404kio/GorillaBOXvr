@@ -1,1 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Gorilla Sandbox Engine</title>
+  
+  <!-- Core Frameworks -->
+  <script src="https://aframe.io"></script>
+  <script src="https://jsdelivr.net"></script>
+  
+  <!-- Network & Spatial Audio Systems -->
+  <script src="https://cloudflare.com"></script>
+  <script src="https://unpkg.com"></script>
+  <script src="https://unpkg.com"></script>
 
+  <script>
+    // ==========================================
+    // 1. LOCOMOTION (Gorilla Tag Physics)
+    // ==========================================
+    AFRAME.registerComponent('gorilla-hand', {
+      init: function () {
+        this.prevPos = new THREE.Vector3();
+        this.handVel = new THREE.Vector3();
+        this.playerRig = document.getElementById('player');
+        
+        this.el.addEventListener('collide', (e) => {
+          if (e.detail.body.el.id === 'floor' && this.playerRig.body) {
+            // Invert hand velocity to push player up and forward
+            let impulse = new CANNON.Vec3(
+              -this.handVel.x * 2.8,
+              -this.handVel.y * 3.8, 
+              -this.handVel.z * 2.8
+            );
+            this.playerRig.body.applyImpulse(impulse, this.playerRig.body.position);
+          }
+        });
+      },
+      tick: function () {
+        let currentPos = this.el.object3D.position;
+        this.handVel.copy(currentPos).sub(this.prevPos).multiplyScalar(100);
+        this.prevPos.copy(currentPos);
+      }
+    });
+
+    // ==========================================
+    // 2. SANDBOX MENU & SPAWNER
+    // ==========================================
+    AFRAME.registerComponent('sandbox-spawner', {
+      init: function () {
+        this.items = ['box', 'sphere', 'ragdoll-target'];
+        this.activeIdx = 0;
+
+        // Controller bindings: Trigger spawns, Grip cycles items
+        this.el.addEventListener('triggerdown', () => this.spawn());
+        this.el.addEventListener('gripdown', () => {
+          this.activeIdx = (this.activeIdx + 1) % this.items.length;
+          console.log(`Selected item: ${this.items[this.activeIdx]}`);
+        });
+      },
+      spawn: function () {
+        let scene = this.el.sceneEl;
+        let worldPos = new THREE.Vector3();
+        this.el.object3D.getWorldPosition(worldPos);
+        
+        let entity = document.createElement('a-entity');
+        let choice = this.items[this.activeIdx];
+
+        if (choice === 'box') {
+          entity.setAttribute('geometry', 'primitive: box; width: 0.5; height: 0.5; depth: 0.5');
+          entity.setAttribute('material', 'color: #ff3366');
+          entity.setAttribute('dynamic-body', 'mass: 5');
+        } else if (choice === 'sphere') {
+          entity.setAttribute('geometry', 'primitive: sphere; radius: 0.3');
+          entity.setAttribute('material', 'color: #33fff3');
+          entity.setAttribute('dynamic-body', 'mass: 3');
+        } else if (choice === 'ragdoll-target') {
+          entity.setAttribute('geometry', 'primitive: cylinder; radius: 0.4; height: 1.4');
+          entity.setAttribute('material', 'color: #5c4033');
+          entity.setAttribute('dynamic-body', 'mass: 12');
+          entity.setAttribute('class', 'dummy');
+        }
+
+        // Spawn 0.5 meters in front of the controller
+        entity.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z - 0.5}`);
+        scene.appendChild(entity);
+      }
+    });
+
+    // ==========================================
+    // 3. COMBAT ENGINE & BLOOD EFFECTS
+    // ==========================================
+    AFRAME.registerComponent('dagger', {
+      init: function () {
+        this.el.addEventListener('collide', (e) => {
+          let hitObject = e.detail.body.el;
+          if (hitObject && hitObject.classList.contains('dummy')) {
+            this.splat(e.detail.contact.bi.position);
+          }
+        });
+      },
+      splat: function (pos) {
+        let scene = this.el.sceneEl;
+        let pSystem = document.createElement('a-entity');
+        
+        pSystem.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+        pSystem.setAttribute('particle-system', 'color: #cc0000; particleCount: 40; size: 0.15; maxAge: 0.4; velocityValue: 0 2 0');
+        
+        scene.appendChild(pSystem);
+        setTimeout(() => pSystem.remove(), 500); // GC cleanup
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Server architecture setup -->
+  <a-scene networked-scene="room: sandbox_main_2026; debug: false; adapter: easyrtc; audio: true;" physics="gravity: -9.8;">
+    
+    <a-assets>
+      <!-- Multiplayer Avatar Outline -->
+      <template id="avatar-template">
+        
+          <a-sphere color="#444" radius="0.25"></a-sphere>
+          
+        
+      </template>
+    </a-assets>
+
+    <!-- Environment Configurations -->
+    <a-plane id="floor" static-body rotation="-90 0 0" width="2000" height="2000" material="color: #222; roughness: 1; metalness: 0"></a-plane>
+    <a-sky color="#0a0a0f"></a-sky>
+    <a-light type="ambient" color="#999"></a-light>
+    <a-light type="directional" color="#fff" intensity="0.5" position="1 3 1"></a-light>
+
+    <!-- Player Rig Configuration -->
+    
+      
+      
+
+      <!-- Left Controller (Movement + Spawner Menu) -->
+      
+
+      <!-- Right Controller (Movement + Combat Dagger) -->
+      
+        <!-- Physical Dagger Component -->
+        
+      
+
+    
+
+  </a-scene>
+</body>
+</html>
