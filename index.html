@@ -4,14 +4,9 @@
   <meta charset="utf-8">
   <title>Gorilla Sandbox Engine</title>
   
-  <!-- Core Frameworks -->
+  <!-- Core Framework & Standard Physics Only -->
   <script src="https://aframe.io"></script>
   <script src="https://jsdelivr.net"></script>
-  
-  <!-- Network & Spatial Audio Systems -->
-  <script src="https://cloudflare.com"></script>
-  <script src="https://unpkg.com"></script>
-  <script src="https://unpkg.com"></script>
 
   <script>
     // ==========================================
@@ -25,7 +20,6 @@
         
         this.el.addEventListener('collide', (e) => {
           if (e.detail.body.el.id === 'floor' && this.playerRig.body) {
-            // Invert hand velocity to push player up and forward
             let impulse = new CANNON.Vec3(
               -this.handVel.x * 2.8,
               -this.handVel.y * 3.8, 
@@ -50,7 +44,6 @@
         this.items = ['box', 'sphere', 'ragdoll-target'];
         this.activeIdx = 0;
 
-        // Controller bindings: Trigger spawns, Grip cycles items
         this.el.addEventListener('triggerdown', () => this.spawn());
         this.el.addEventListener('gripdown', () => {
           this.activeIdx = (this.activeIdx + 1) % this.items.length;
@@ -80,69 +73,48 @@
           entity.setAttribute('class', 'dummy');
         }
 
-        // Spawn 0.5 meters in front of the controller
         entity.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z - 0.5}`);
         scene.appendChild(entity);
       }
     });
 
     // ==========================================
-    // 3. COMBAT ENGINE & BLOOD EFFECTS
+    // 3. COMBAT DAGGERS
     // ==========================================
     AFRAME.registerComponent('dagger', {
       init: function () {
         this.el.addEventListener('collide', (e) => {
           let hitObject = e.detail.body.el;
           if (hitObject && hitObject.classList.contains('dummy')) {
-            this.splat(e.detail.contact.bi.position);
+            // Log target impact for test validation
+            console.log("Target dummy stabbed successfully!");
           }
         });
-      },
-      splat: function (pos) {
-        let scene = this.el.sceneEl;
-        let pSystem = document.createElement('a-entity');
-        
-        pSystem.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
-        pSystem.setAttribute('particle-system', 'color: #cc0000; particleCount: 40; size: 0.15; maxAge: 0.4; velocityValue: 0 2 0');
-        
-        scene.appendChild(pSystem);
-        setTimeout(() => pSystem.remove(), 500); // GC cleanup
       }
     });
   </script>
 </head>
 <body>
 
-  <!-- Server architecture setup -->
-  <a-scene networked-scene="room: sandbox_main_2026; debug: false; adapter: easyrtc; audio: true;" physics="gravity: -9.8;">
+  <!-- Single Player Stable Scene -->
+  <a-scene physics="gravity: -9.8;">
     
-    <a-assets>
-      <!-- Multiplayer Avatar Outline -->
-      <template id="avatar-template">
-        
-          <a-sphere color="#444" radius="0.25"></a-sphere>
-          
-        
-      </template>
-    </a-assets>
-
-    <!-- Environment Configurations -->
+    <!-- Environment Platforms -->
     <a-plane id="floor" static-body rotation="-90 0 0" width="2000" height="2000" material="color: #222; roughness: 1; metalness: 0"></a-plane>
     <a-sky color="#0a0a0f"></a-sky>
     <a-light type="ambient" color="#999"></a-light>
     <a-light type="directional" color="#fff" intensity="0.5" position="1 3 1"></a-light>
 
-    <!-- Player Rig Configuration -->
+    <!-- Player Character Setup -->
     
       
       
 
-      <!-- Left Controller (Movement + Spawner Menu) -->
+      <!-- Left Controller -->
       
 
-      <!-- Right Controller (Movement + Combat Dagger) -->
+      <!-- Right Controller -->
       
-        <!-- Physical Dagger Component -->
         
       
 
